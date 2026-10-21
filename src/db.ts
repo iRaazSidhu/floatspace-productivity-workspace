@@ -32,14 +32,14 @@ function openDb(): Promise<IDBDatabase> {
 
 export const db = {
   async load(): Promise<ExportPayload> {
-    const db = await openDb();
+    const idb = await openDb();
     return new Promise((resolve, reject) => {
-      const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY);
+      const request = idb.transaction(STORE, 'readonly').objectStore(STORE).get(KEY);
       request.onsuccess = () => {
         const value = request.result as unknown;
         if (!value) { resolve(DEFAULT_DATA); return; }
         if (validateExportPayload(value)) resolve({ ...DEFAULT_DATA, ...value, preferences: { ...DEFAULT_PREFERENCES, ...value.preferences } });
-        else { reject(new Error('Saved workspace data is invalid. Export any available backup before clearing local data.')); }
+        else reject(new Error('Saved workspace data is invalid. Export any available backup before clearing local data.'));
       };
       request.onerror = () => reject(request.error ?? new Error('Could not load workspace.'));
     });
@@ -49,7 +49,16 @@ export const db = {
     return new Promise((resolve, reject) => {
       const tx = idb.transaction(STORE, 'readwrite');
       tx.objectStore(STORE).put(value, KEY);
-      tx.oncomplete = () => resolve();
+      tx.oncomplete = () => {
+        // In an extension context, mirror only timer metadata to the service worker
+        // so Chrome Alarms can still fire after the side panel closes. No app data
+        // is sent to a remote server.
+        const extension = (globalThis as typeof globalThis & { chrome?: { runtime?: { sendMessage?: (message: unknown) => unknown } } }).chrome;
+        try {
+          if (extension?.runtime?.sendMessage) extension.runtime.sendMessage({ type: 'TIMER_UPDATED', timer: value.timer });
+        } catch { /* The website context has no extension runtime; local save succeeded. */ }
+        resolve();
+      };
       tx.onerror = () => reject(tx.error ?? new Error('Could not save workspace.'));
       tx.onabort = () => reject(tx.error ?? new Error('Workspace save was interrupted.'));
     });
