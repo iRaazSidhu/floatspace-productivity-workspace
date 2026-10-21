@@ -39,3 +39,34 @@ The workspace payload contains tasks, notes, bookmarks, focus sessions, preferen
 4. PiP and side panel
 5. Import/export, privacy controls
 6. Automated tests and browser QA
+
+
+## Balanced floating workspace refinement
+
+The floating Document PiP view is a compact mini-workspace, not a timer-only player.
+
+### Always-visible content
+- Header: Floatspace identity, local-only indicator and close control.
+- Timer: current mode and countdown, progress ring, start/pause, reset and skip.
+- Task area: selected current task plus up to two next pending tasks, with in-place completion and task promotion.
+- Pinned note: one pinned note preview, clamped to two lines.
+- Pinned links: up to three user-pinned links.
+- Dock: Focus, Tasks, Notes, Links, Stats and More; plus quick task capture.
+
+### Drawer interactions
+- Tasks: view the pending queue, select the current focus task and quickly add a task.
+- Notes: create a quick note and pin/unpin the note shown in the always-visible preview.
+- Links: open saved links and pin/unpin links shown in the mini workspace.
+- Stats: today's completed focus time, focus-session count, tasks completed today and tasks remaining.
+- More: current reminder/sound settings summary.
+
+### Reminder preferences
+- Sound cue is local and best-effort when a focus/break session completes.
+- In-app reminder can be toggled independently.
+- System notifications are opt-in and request browser permission explicitly.
+- Breaks do not auto-start; the next mode is prepared and the user chooses when to begin.
+
+### Storage compatibility
+- `currentTaskId`, bookmark `pinned`, and reminder booleans are added as local fields.
+- Older local records and older backups remain accepted; defaults fill new preference values on load/restore.
+- No cloud database or analytics endpoints were introduced.
