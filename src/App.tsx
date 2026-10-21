@@ -196,7 +196,7 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
       win.document.body.className = 'floatspace-pip-body';
       // A PiP window has its own document. Mirror local stylesheets, then render
       // the same React component into it so all tools share the page's state.
-      document.querySelectorAll('link[rel="stylesheet"]').forEach((node) => win.document.head.appendChild(node.cloneNode(true)));
+      document.querySelectorAll('link[rel="stylesheet"]').forEach((node) => { const copy = node.cloneNode(true) as HTMLLinkElement; copy.href = (node as HTMLLinkElement).href; win.document.head.appendChild(copy); });
       document.querySelectorAll('style').forEach((node) => win.document.head.appendChild(node.cloneNode(true)));
       win.addEventListener('pagehide', () => setPipWindow((current) => current === win ? null : current), { once: true });
       setPipWindow(win);
