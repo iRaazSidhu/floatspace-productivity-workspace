@@ -29,3 +29,20 @@
 - [ ] Clearing all data requires confirmation
 - [ ] Responsive layout is usable at narrow widths
 - [ ] Keyboard focus and reduced-motion preference are supported
+
+
+## Balanced floating workspace
+- [ ] Open PiP from an explicit user click; unsupported browsers show the fallback notice.
+- [ ] Default requested PiP size is balanced, and the window does not attempt to dictate screen position.
+- [ ] Timer, current task and two next tasks remain visible together.
+- [ ] Complete the current task in PiP; current selection advances to the next incomplete task.
+- [ ] Promote a next task to the current focus task.
+- [ ] Pin one note; its preview appears in the always-visible area; unpinning shows the empty state.
+- [ ] Pin/unpin quick links; at most three pinned links appear in the floating view.
+- [ ] Quick-add a task and create a note from within the floating window.
+- [ ] Tasks, notes, pinned links, timer and settings changes are reflected between main UI and PiP.
+- [ ] Today's focus stats count only sessions completed today.
+- [ ] Sound can be toggled independently from in-app break reminders.
+- [ ] System notifications are opt-in and handle denied/unsupported browser permission.
+- [ ] Close/reopen PiP and verify the stored timer state remains.
+- [ ] Confirm no task/note/bookmark content is sent to a remote server.
