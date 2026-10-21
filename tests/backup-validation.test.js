@@ -26,3 +26,17 @@ test('rejects unexpected priority and out-of-range timer preferences', () => {
 test('rejects malformed records instead of arbitrary objects', () => {
   const p = valid(); p.notes = [null]; assert.equal(validateExportPayload(p), false);
 });
+
+test('accepts older local backups that do not have the newer reminder preferences', () => {
+  const p = valid();
+  delete p.preferences.soundEnabled;
+  delete p.preferences.compactMode;
+  delete p.preferences.breakReminderEnabled;
+  delete p.preferences.notificationsEnabled;
+  assert.equal(validateExportPayload(p), true);
+});
+test('rejects malformed optional reminder preferences and pinned fields', () => {
+  const p = valid(); p.preferences.notificationsEnabled = 'yes'; assert.equal(validateExportPayload(p), false);
+  const q = valid(); q.bookmarks[0].pinned = 'yes'; assert.equal(validateExportPayload(q), false);
+  const z = valid(); z.currentTaskId = 23; assert.equal(validateExportPayload(z), false);
+});

@@ -3,16 +3,16 @@ import { validateExportPayload } from './backup-validation.js';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type Task = { id: string; title: string; priority: TaskPriority; dueDate?: string; completed: boolean; createdAt: number; completedAt?: number };
 export type Note = { id: string; title: string; content: string; pinned: boolean; updatedAt: number };
-export type BookmarkRecord = { id: string; title: string; url: string; folder: string; createdAt: number };
+export type BookmarkRecord = { id: string; title: string; url: string; folder: string; createdAt: number; pinned?: boolean };
 export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
-export type TimerState = { mode: TimerMode; status: 'idle' | 'running' | 'paused' | 'completed'; startedAt: number | null; endsAt: number | null; remainingMs: number };
+export type TimerState = { mode: TimerMode; status: 'idle' | 'running' | 'paused' | 'completed'; startedAt: number | null; endsAt: number | null; remainingMs: number; elapsedMs?: number };
 export type Session = { id: string; mode: TimerMode; startedAt: number; durationSeconds: number; completedAt: number };
-export type Preferences = { theme: 'dark' | 'light'; focusMinutes: number; shortBreakMinutes: number; longBreakMinutes: number; sessionsBeforeLongBreak: number; soundEnabled: boolean; compactMode: boolean };
-export type ExportPayload = { app: 'floatspace'; schemaVersion: 1; exportedAt: string; tasks: Task[]; notes: Note[]; bookmarks: BookmarkRecord[]; sessions: Session[]; preferences: Preferences; timer: TimerState };
+export type Preferences = { theme: 'dark' | 'light'; focusMinutes: number; shortBreakMinutes: number; longBreakMinutes: number; sessionsBeforeLongBreak: number; soundEnabled: boolean; breakReminderEnabled: boolean; notificationsEnabled: boolean; compactMode: boolean };
+export type ExportPayload = { app: 'floatspace'; schemaVersion: 1; exportedAt: string; currentTaskId?: string | null; tasks: Task[]; notes: Note[]; bookmarks: BookmarkRecord[]; sessions: Session[]; preferences: Preferences; timer: TimerState };
 
-export const DEFAULT_PREFERENCES: Preferences = { theme: 'dark', focusMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, sessionsBeforeLongBreak: 4, soundEnabled: true, compactMode: false };
-export const DEFAULT_TIMER: TimerState = { mode: 'focus', status: 'idle', startedAt: null, endsAt: null, remainingMs: 25 * 60_000 };
-export const DEFAULT_DATA: ExportPayload = { app: 'floatspace', schemaVersion: 1, exportedAt: new Date().toISOString(), tasks: [], notes: [], bookmarks: [], sessions: [], preferences: DEFAULT_PREFERENCES, timer: DEFAULT_TIMER };
+export const DEFAULT_PREFERENCES: Preferences = { theme: 'dark', focusMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, sessionsBeforeLongBreak: 4, soundEnabled: true, breakReminderEnabled: true, notificationsEnabled: false, compactMode: false };
+export const DEFAULT_TIMER: TimerState = { mode: 'focus', status: 'idle', startedAt: null, endsAt: null, remainingMs: 25 * 60_000, elapsedMs: 0 };
+export const DEFAULT_DATA: ExportPayload = { app: 'floatspace', schemaVersion: 1, exportedAt: new Date().toISOString(), currentTaskId: null, tasks: [], notes: [], bookmarks: [], sessions: [], preferences: DEFAULT_PREFERENCES, timer: DEFAULT_TIMER };
 
 const DB_NAME = 'floatspace-local';
 const STORE = 'workspace';
