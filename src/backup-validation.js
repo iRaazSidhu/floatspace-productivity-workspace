@@ -20,5 +20,6 @@ export function validateExportPayload(value) {
   if (!['dark', 'light'].includes(String(pref.theme)) || !hasNumber(pref, 'focusMinutes') || Number(pref.focusMinutes) < 1 || Number(pref.focusMinutes) > 180 || !hasNumber(pref, 'shortBreakMinutes') || Number(pref.shortBreakMinutes) < 1 || Number(pref.shortBreakMinutes) > 60 || !hasNumber(pref, 'longBreakMinutes') || Number(pref.longBreakMinutes) < 1 || Number(pref.longBreakMinutes) > 90 || !hasNumber(pref, 'sessionsBeforeLongBreak') || Number(pref.sessionsBeforeLongBreak) < 2 || Number(pref.sessionsBeforeLongBreak) > 8) return false;
   const timer = p.timer;
   if (!['focus', 'shortBreak', 'longBreak'].includes(String(timer.mode)) || !['idle', 'running', 'paused', 'completed'].includes(String(timer.status)) || !hasNumber(timer, 'remainingMs')) return false;
+  if (timer.elapsedMs !== undefined && (!hasNumber(timer, 'elapsedMs') || Number(timer.elapsedMs) < 0)) return false;
   return true;
 }
