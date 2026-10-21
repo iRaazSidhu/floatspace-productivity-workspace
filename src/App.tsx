@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { Activity, Bookmark, Check, CheckCircle2, Clock3, Download, FileText, LayoutDashboard, ListTodo, Moon, Pause, PictureInPicture2, Play, Plus, Settings2, ShieldCheck, SkipForward, Sun, TimerReset, Trash2, Upload, X } from 'lucide-react';
+import { Activity, Bookmark, Check, CheckCircle2, Clock3, Download, FileText, LayoutDashboard, ListTodo, Moon, Pause, PictureInPicture2, Play, Plus, ShieldCheck, SkipForward, Sun, TimerReset, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { db, DEFAULT_DATA, type BookmarkRecord, type ExportPayload, type Note, type Task, type TimerMode } from './db';
 import { validateExportPayload } from './backup-validation.js';
@@ -26,7 +26,6 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
   const [search, setSearch] = useState('');
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(Date.now());
-  const [pipOpen, setPipOpen] = useState(false);
   const pipRef = useRef<Window | null>(null);
   const endedRef = useRef<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -99,16 +98,25 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
     const api = (window as Window & { documentPictureInPicture?: { requestWindow: (options?: { width?: number; height?: number }) => Promise<Window> } }).documentPictureInPicture;
     if (!api) { setNoticeFor('Floating PiP is not supported in this browser. Use the Chrome side panel instead.'); return; }
     try {
-      const win = await api.requestWindow({ width: 340, height: 240 }); pipRef.current = win; setPipOpen(true);
+      const win = await api.requestWindow({ width: 340, height: 240 }); pipRef.current = win;
       win.document.title = 'Floatspace Focus';
       win.document.head.innerHTML = '<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;background:#0b0d12;color:#f1f3f7;font-family:Inter,system-ui,sans-serif}main{display:grid;gap:13px}.label{font-size:11px;letter-spacing:1.5px;color:#a0a7b4;text-transform:uppercase}.time{font-size:56px;font-weight:750;letter-spacing:-3px}.row{display:flex;gap:8px}button{border:0;border-radius:10px;padding:10px 13px;background:#c5f477;color:#1c260e;font-weight:700;cursor:pointer}button.alt{background:#222733;color:#eef0f6}</style>';
       win.document.body.innerHTML = '<main><div class="label" id="pip-mode">FOCUS SESSION</div><div class="time" id="pip-time">25:00</div><div class="row"><button id="pip-toggle">Start</button><button class="alt" id="pip-reset">Reset</button><button class="alt" id="pip-close">Close</button></div><div class="label">Your data stays on this device</div></main>';
       win.document.getElementById('pip-toggle')?.addEventListener('click', () => {
-        if (data.timer.status === 'running') pauseTimer(); else startTimer();
+        setData((current) => {
+          const timer = current.timer;
+          if (timer.status === 'running') {
+            return { ...current, timer: { ...timer, status: 'paused', startedAt: null, endsAt: null, remainingMs: remainingMilliseconds(timer, Date.now()) } };
+          }
+          const left = timer.status === 'paused' ? timer.remainingMs : (timer.remainingMs > 0 && timer.status === 'idle' ? timer.remainingMs : duration(timer.mode, current));
+          const startedAt = Date.now();
+          endedRef.current = null;
+          return { ...current, timer: { ...timer, status: 'running', startedAt, endsAt: startedAt + left, remainingMs: left } };
+        });
       });
       win.document.getElementById('pip-reset')?.addEventListener('click', () => resetTimer());
       win.document.getElementById('pip-close')?.addEventListener('click', () => win.close());
-      win.addEventListener('pagehide', () => { pipRef.current = null; setPipOpen(false); });
+      win.addEventListener('pagehide', () => { pipRef.current = null; });
     } catch { setNoticeFor('Could not open floating window. Try clicking again from the page.'); }
   }
   useEffect(() => {
