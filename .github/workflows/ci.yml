@@ -1,0 +1,27 @@
+name: Floatspace CI
+
+on:
+  push:
+    branches: ["main", "mvp/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run unit tests
+        run: npm test
+      - name: Type check
+        run: npm run typecheck
+      - name: Build website and extension
+        run: npm run build
