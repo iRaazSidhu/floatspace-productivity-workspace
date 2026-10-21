@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import { useState } from 'react';
-import { AlarmClock, BarChart3, Check, CheckCircle2, ChevronRight, Clock3, FileText, Link2, ListTodo, MoreHorizontal, Pause, Pin, PinOff, Play, Plus, RotateCcw, SkipForward, StickyNote, Target, Volume2, X } from 'lucide-react';
+import { AlarmClock, BarChart3, Bell, BellOff, Check, CheckCircle2, ChevronRight, Clock3, FileText, Link2, ListTodo, MoreHorizontal, Pause, Pin, PinOff, Play, Plus, RotateCcw, SkipForward, StickyNote, Target, Volume2, X } from 'lucide-react';
 import './floating-workspace.css';
 import { formatCountdown } from './timer-utils.js';
 import type { BookmarkRecord, ExportPayload, Note, Task } from './db';
@@ -19,6 +19,9 @@ type Props = {
   onAddNote: (content: string) => void;
   onToggleNotePin: (id: string) => void;
   onToggleBookmarkPin: (id: string) => void;
+  onToggleSound: () => void;
+  onToggleBreakReminder: () => void;
+  onToggleNotifications: () => void;
   onClose: () => void;
 };
 
@@ -35,6 +38,8 @@ export default function FloatingWorkspace(props: Props) {
   const upcoming = openTasks.filter((task) => task.id !== currentTask?.id).slice(0, 2);
   const pinnedNote = data.notes.find((note) => note.pinned);
   const pinnedLinks = data.bookmarks.filter((bookmark) => bookmark.pinned).slice(0, 3);
+  const latestSession = data.sessions[0];
+  const justCompleted = !!latestSession && Date.now() - latestSession.completedAt >= 0 && Date.now() - latestSession.completedAt < 15_000;
   const today = new Date().toDateString();
   const todaySessions = data.sessions.filter((session) => new Date(session.completedAt).toDateString() === today);
   const todayFocus = todaySessions.filter((session) => session.mode === 'focus');
@@ -71,6 +76,8 @@ export default function FloatingWorkspace(props: Props) {
       </div>
     </header>
 
+    {justCompleted && <div className="float-completion-banner"><CheckCircle2 size={14}/><span>{latestSession.mode === 'focus' ? 'Focus complete — take a short break.' : 'Break complete — ready to focus again?'}</span></div>}
+
     <section className="float-timer-card" aria-label="Focus timer">
       <div className="float-timer-copy">
         <div className="float-eyebrow">{labelMode(data.timer.mode)} <span className={data.timer.status === 'running' ? 'running-dot' : ''}/></div>
@@ -105,7 +112,7 @@ export default function FloatingWorkspace(props: Props) {
       </button> : <button className="float-no-note" onClick={() => toggleTool('notes')}><Plus size={14}/> Pin a note to keep it in view</button>}
     </section>
 
-    {pinnedLinks.length > 0 && <section className="float-links-row"><div className="float-section-heading"><div><Link2 size={13}/><span>PINNED LINKS</span></div><button onClick={() => toggleTool('links')}>Manage <ChevronRight size={13}/></button></div><div className="float-link-chips">{pinnedLinks.map((link) => <a href={link.url} target="_blank" rel="noreferrer" title={link.url} key={link.id}><span>{link.title.slice(0, 1).toUpperCase()}</span>{link.title}</a>)}</div></section>}
+    <section className="float-links-row"><div className="float-section-heading"><div><Link2 size={13}/><span>PINNED LINKS</span></div><button onClick={() => toggleTool('links')}>Manage <ChevronRight size={13}/></button></div>{pinnedLinks.length > 0 ? <div className="float-link-chips">{pinnedLinks.map((link) => <a href={link.url} target="_blank" rel="noreferrer" title={link.url} key={link.id}><span>{link.title.slice(0, 1).toUpperCase()}</span>{link.title}</a>)}</div> : <button className="float-no-note" onClick={() => toggleTool('links')}><Plus size={13}/> Pin a favourite website</button>}</section>
 
     {capture === 'task' && <form className="float-capture" onSubmit={submitCapture}><input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Add a task…" maxLength={240}/><button className="float-primary-icon" type="submit" aria-label="Save task"><Check size={15}/></button><button className="float-secondary-icon" type="button" aria-label="Cancel" onClick={() => setCapture(null)}><X size={14}/></button></form>}
 
@@ -126,7 +133,7 @@ export default function FloatingWorkspace(props: Props) {
         {data.bookmarks.length === 0 && <p className="float-helper">Save links from the main workspace, then pin the ones you use often.</p>}
       </div>}
       {tool === 'stats' && <div className="float-stats-grid"><div><strong>{focusMinutes}<small>m</small></strong><span>Focus time today</span></div><div><strong>{todayFocus.length}</strong><span>Focus sessions</span></div><div><strong>{data.tasks.filter((task) => task.completed && task.completedAt && new Date(task.completedAt).toDateString() === today).length}</strong><span>Tasks completed</span></div><div><strong>{openTasks.length}</strong><span>Tasks remaining</span></div></div>}
-      {tool === 'more' && <div className="float-more-tools"><div><Volume2 size={15}/><span>Break reminder sounds</span><strong>{data.preferences.soundEnabled ? 'On' : 'Off'}</strong></div><div><AlarmClock size={15}/><span>Break reminders</span><strong>{data.preferences.breakReminderEnabled ? 'On' : 'Off'}</strong></div><p>Change reminders and sound preferences in Settings.</p></div>}
+      {tool === 'more' && <div className="float-more-tools"><button onClick={props.onToggleSound}><Volume2 size={15}/><span>Session completion sound</span><strong>{data.preferences.soundEnabled ? 'On' : 'Off'}</strong></button><button onClick={props.onToggleBreakReminder}><AlarmClock size={15}/><span>In-app break reminders</span><strong>{data.preferences.breakReminderEnabled ? 'On' : 'Off'}</strong></button><button onClick={props.onToggleNotifications}><BellIcon enabled={data.preferences.notificationsEnabled}/><span>System notifications</span><strong>{data.preferences.notificationsEnabled ? 'On' : 'Off'}</strong></button><p>Notification permission may be required by your browser.</p></div>}
     </section>}
 
     <footer className="float-dock" aria-label="Workspace tools">
@@ -141,6 +148,8 @@ export default function FloatingWorkspace(props: Props) {
     <div className="float-footnote"><span><span className="float-foot-dot"/> Saved on this device</span><span>{data.preferences.soundEnabled ? <Volume2 size={11}/> : <Volume2 size={11} opacity={0.4}/>} {data.preferences.breakReminderEnabled ? 'Break reminder on' : 'Reminders off'}</span></div>
   </div>;
 }
+
+function BellIcon({ enabled }: { enabled: boolean }) { return enabled ? <Bell size={15}/> : <BellOff size={15}/>; }
 
 function DockButton({ active, icon, label, badge, onClick }: { active: boolean; icon: React.ReactNode; label: string; badge?: number; onClick: () => void }) {
   return <button className={`float-dock-item ${active ? 'active' : ''}`} title={label} aria-label={label} aria-pressed={active} onClick={onClick}><span className="float-dock-icon">{icon}{badge !== undefined && badge > 0 && <i>{badge > 9 ? '9+' : badge}</i>}</span><small>{label}</small></button>;
