@@ -1,0 +1,66 @@
+import { validateExportPayload } from './backup-validation.js';
+
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type Task = { id: string; title: string; priority: TaskPriority; dueDate?: string; completed: boolean; createdAt: number; completedAt?: number };
+export type Note = { id: string; title: string; content: string; pinned: boolean; updatedAt: number };
+export type BookmarkRecord = { id: string; title: string; url: string; folder: string; createdAt: number };
+export type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
+export type TimerState = { mode: TimerMode; status: 'idle' | 'running' | 'paused' | 'completed'; startedAt: number | null; endsAt: number | null; remainingMs: number };
+export type Session = { id: string; mode: TimerMode; startedAt: number; durationSeconds: number; completedAt: number };
+export type Preferences = { theme: 'dark' | 'light'; focusMinutes: number; shortBreakMinutes: number; longBreakMinutes: number; sessionsBeforeLongBreak: number; soundEnabled: boolean; compactMode: boolean };
+export type ExportPayload = { app: 'floatspace'; schemaVersion: 1; exportedAt: string; tasks: Task[]; notes: Note[]; bookmarks: BookmarkRecord[]; sessions: Session[]; preferences: Preferences; timer: TimerState };
+
+export const DEFAULT_PREFERENCES: Preferences = { theme: 'dark', focusMinutes: 25, shortBreakMinutes: 5, longBreakMinutes: 15, sessionsBeforeLongBreak: 4, soundEnabled: true, compactMode: false };
+export const DEFAULT_TIMER: TimerState = { mode: 'focus', status: 'idle', startedAt: null, endsAt: null, remainingMs: 25 * 60_000 };
+export const DEFAULT_DATA: ExportPayload = { app: 'floatspace', schemaVersion: 1, exportedAt: new Date().toISOString(), tasks: [], notes: [], bookmarks: [], sessions: [], preferences: DEFAULT_PREFERENCES, timer: DEFAULT_TIMER };
+
+const DB_NAME = 'floatspace-local';
+const STORE = 'workspace';
+const KEY = 'main';
+let database: Promise<IDBDatabase> | null = null;
+
+function openDb(): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') return Promise.reject(new Error('IndexedDB is not available in this browser context.'));
+  if (!database) database = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE); };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('Could not open local workspace database.'));
+  });
+  return database;
+}
+
+export const db = {
+  async load(): Promise<ExportPayload> {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction(STORE, 'readonly').objectStore(STORE).get(KEY);
+      request.onsuccess = () => {
+        const value = request.result as unknown;
+        if (!value) { resolve(DEFAULT_DATA); return; }
+        if (validateExportPayload(value)) resolve({ ...DEFAULT_DATA, ...value, preferences: { ...DEFAULT_PREFERENCES, ...value.preferences } });
+        else { reject(new Error('Saved workspace data is invalid. Export any available backup before clearing local data.')); }
+      };
+      request.onerror = () => reject(request.error ?? new Error('Could not load workspace.'));
+    });
+  },
+  async save(value: ExportPayload): Promise<void> {
+    const idb = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = idb.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(value, KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error('Could not save workspace.'));
+      tx.onabort = () => reject(tx.error ?? new Error('Workspace save was interrupted.'));
+    });
+  },
+  async clear(): Promise<void> {
+    const idb = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = idb.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(KEY);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error('Could not clear workspace.'));
+    });
+  },
+};
