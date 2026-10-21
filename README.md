@@ -1,6 +1,6 @@
 # Floatspace — Local-first Productivity Workspace
 
-Floatspace is an MVP productivity workspace with Pomodoro, tasks, notes, quick links, focus history, local backup/restore, a Chrome Extension side panel, and a floating Document Picture-in-Picture window where supported.
+Floatspace is a local-first productivity workspace with Pomodoro, tasks, notes, pinned quick links, focus history, local backup/restore, a Chrome Extension side panel, and a balanced floating Document Picture-in-Picture workspace where supported. The floating view keeps the timer, current task plus two next tasks, a pinned note preview, and pinned links in view, with icon-dock drawers for tasks, notes, links, daily stats and reminder controls.
 
 ## Privacy model
 
@@ -8,15 +8,19 @@ Floatspace is an MVP productivity workspace with Pomodoro, tasks, notes, quick l
 - Website and Chrome extension store data separately in their own browser origins.
 - Use JSON export/import to manually move data between the website and extension.
 - No automatic browser-history collection.
+- The PiP window uses the same React application state as the page; closing it does not stop the stored timer.
+- PiP initial dimensions are a request to the browser, and PiP is constrained by the opener tab/browser lifecycle.
 
 ## MVP includes
 
 - Responsive React + TypeScript dashboard
-- Timestamp-based Pomodoro timer, breaks, stopwatch/countdown utilities
+- Timestamp-based Pomodoro focus and break timer
 - Tasks, quick notes, saved links, focus-session history
 - IndexedDB persistence, configurable settings and themes
 - JSON export/import with schema validation
-- Document PiP workspace with supported-browser fallback
+- Balanced React-powered Document PiP workspace: timer, current + 2 next tasks, pinned note, pinned links, icon dock and tool drawers
+- Quick task/note capture, local session sound and configurable in-app/system reminders
+- Pin/unpin notes and bookmarks; current focus task persists locally
 - Chrome Extension Manifest V3 side panel and alarms
 
 ## Requirements
