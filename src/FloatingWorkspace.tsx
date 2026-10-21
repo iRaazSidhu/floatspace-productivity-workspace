@@ -1,5 +1,7 @@
+import type * as React from 'react';
 import { useState } from 'react';
-import { AlarmClock, ArrowUpRight, BarChart3, Check, CheckCircle2, ChevronRight, Clock3, Coffee, FileText, Link2, ListTodo, MoreHorizontal, Pause, Pin, PinOff, Play, Plus, RotateCcw, SkipForward, StickyNote, Target, Volume2, X } from 'lucide-react';
+import { AlarmClock, BarChart3, Check, CheckCircle2, ChevronRight, Clock3, FileText, Link2, ListTodo, MoreHorizontal, Pause, Pin, PinOff, Play, Plus, RotateCcw, SkipForward, StickyNote, Target, Volume2, X } from 'lucide-react';
+import './floating-workspace.css';
 import { formatCountdown } from './timer-utils.js';
 import type { BookmarkRecord, ExportPayload, Note, Task } from './db';
 
