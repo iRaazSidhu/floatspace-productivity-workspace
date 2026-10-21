@@ -47,8 +47,8 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
         endedRef.current = timer.endsAt!;
         const completedFocus = current.sessions.filter((s) => s.mode === 'focus').length + (timer.mode === 'focus' ? 1 : 0);
         const nextMode = nextModeAfterSession(timer.mode, completedFocus, current.preferences.sessionsBeforeLongBreak);
-        const session = { id: uid(), mode: timer.mode, startedAt: timer.startedAt ?? tick, durationSeconds: Math.max(0, Math.round((timer.endsAt! - (timer.startedAt ?? tick)) / 1000)), completedAt: tick };
-        return { ...current, sessions: [session, ...current.sessions], timer: { mode: nextMode, status: 'idle', startedAt: null, endsAt: null, remainingMs: duration(nextMode, current) } };
+        const session = { id: uid(), mode: timer.mode, startedAt: timer.startedAt ?? tick, durationSeconds: Math.max(0, Math.round(((timer.elapsedMs ?? 0) + Math.max(0, tick - (timer.startedAt ?? tick))) / 1000)), completedAt: tick };
+        return { ...current, sessions: [session, ...current.sessions], timer: { mode: nextMode, status: 'idle', startedAt: null, endsAt: null, remainingMs: duration(nextMode, current), elapsedMs: 0 } };
       });
     }, 400);
     return () => window.clearInterval(interval);
@@ -178,10 +178,11 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
   }
   function pauseTimer() {
     const left = remainingMilliseconds(data.timer, Date.now());
-    updateTimer({ ...data.timer, status: 'paused', startedAt: null, endsAt: null, remainingMs: left });
+    const activeSegment = data.timer.status === 'running' && data.timer.startedAt !== null ? Math.max(0, Date.now() - data.timer.startedAt) : 0;
+    updateTimer({ ...data.timer, status: 'paused', startedAt: null, endsAt: null, remainingMs: left, elapsedMs: (data.timer.elapsedMs ?? 0) + activeSegment });
   }
   function resetTimer(mode: TimerMode = data.timer.mode) {
-    updateTimer({ mode, status: 'idle', startedAt: null, endsAt: null, remainingMs: duration(mode, data) });
+    updateTimer({ mode, status: 'idle', startedAt: null, endsAt: null, remainingMs: duration(mode, data), elapsedMs: 0 });
     endedRef.current = null;
   }
   function skipTimer() { resetTimer(data.timer.mode === 'focus' ? 'shortBreak' : 'focus'); }
@@ -271,6 +272,9 @@ export default function App({ extensionMode = false }: { extensionMode?: boolean
     onAddNote={addNoteContent}
     onToggleNotePin={toggleNotePin}
     onToggleBookmarkPin={toggleBookmarkPin}
+    onToggleSound={() => patch((old) => ({ ...old, preferences: { ...old.preferences, soundEnabled: !old.preferences.soundEnabled } }))}
+    onToggleBreakReminder={() => patch((old) => ({ ...old, preferences: { ...old.preferences, breakReminderEnabled: !old.preferences.breakReminderEnabled } }))}
+    onToggleNotifications={() => data.preferences.notificationsEnabled ? patch((old) => ({ ...old, preferences: { ...old.preferences, notificationsEnabled: false } })) : void enableNotifications()}
     onClose={() => { pipWindow.close(); setPipWindow(null); }}
   />, pipWindow.document.body) : null}</>;
 }
